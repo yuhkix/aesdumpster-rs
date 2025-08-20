@@ -8,11 +8,11 @@
 
 A high-performance Rust utility for scanning Windows executables to locate AES keys through pattern matching and entropy analysis.
 
-[Features](#key-features) •
-[Quick Start](#quickstart) •
-[Usage](#usage-and-output) •
-[How It Works](#how-it-works) •
-[Building](#building-details)
+[Features](#-key-features) •
+[Quick Start](#-quickstart) •
+[Usage](#-usage-and-output) •
+[How It Works](#-how-it-works) •
+[Building](#-building-details)
 
 ![Ferris](https://i.ibb.co/QVThVkd/Ferris.png)
 
