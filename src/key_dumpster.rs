@@ -1,5 +1,8 @@
 use windows::Win32::Foundation::HANDLE;
-use windows::Win32::System::Console::{GetStdHandle, SetConsoleTextAttribute, STD_OUTPUT_HANDLE, FOREGROUND_RED, FOREGROUND_GREEN, FOREGROUND_BLUE, FOREGROUND_INTENSITY};
+use windows::Win32::System::Console::{
+    FOREGROUND_BLUE, FOREGROUND_GREEN, FOREGROUND_INTENSITY, FOREGROUND_RED, GetStdHandle,
+    STD_OUTPUT_HANDLE, SetConsoleTextAttribute,
+};
 
 #[derive(Clone)]
 pub struct Key(pub String);
@@ -9,7 +12,11 @@ pub struct Keys {
 }
 
 impl Keys {
-    pub fn new() -> Self { Self { key_vector: Vec::new() } }
+    pub fn new() -> Self {
+        Self {
+            key_vector: Vec::new(),
+        }
+    }
 }
 
 pub struct KeyDumpster {
@@ -94,31 +101,57 @@ impl KeyDumpster {
         found_any
     }
 
-    fn concatenate_aes_type(&self, buf: &[u8], base: usize, offsets: &Vec<usize>) -> Option<String> {
+    fn concatenate_aes_type(
+        &self,
+        buf: &[u8],
+        base: usize,
+        offsets: &Vec<usize>,
+    ) -> Option<String> {
         let mut out = String::new();
         for off in offsets.iter() {
             let idx = base.checked_add(*off)?;
-            if idx + 4 > buf.len() { return None; }
-            out.push_str(&hex_str(&buf[idx..idx+4]));
+            if idx + 4 > buf.len() {
+                return None;
+            }
+            out.push_str(&hex_str(&buf[idx..idx + 4]));
         }
         Some(out.to_uppercase())
     }
 
     fn key_entropy_generator(&self) -> Vec<f64> {
-        self.keys.key_vector.iter().map(|k| calc_entropy(&k.0)).collect()
+        self.keys
+            .key_vector
+            .iter()
+            .map(|k| calc_entropy(&k.0))
+            .collect()
     }
 
     pub fn print_key_information(&self) -> bool {
-        let hconsole: HANDLE = unsafe { GetStdHandle(STD_OUTPUT_HANDLE).expect("GetStdHandle failed") };
+        let hconsole: HANDLE =
+            unsafe { GetStdHandle(STD_OUTPUT_HANDLE).expect("GetStdHandle failed") };
         for (i, key) in self.keys.key_vector.iter().enumerate() {
             let ent = self.key_entropies.get(i).cloned().unwrap_or(0.0);
             unsafe {
                 // Match C++ thresholds exactly
-                let color = if ent >= 3.7 { FOREGROUND_GREEN | FOREGROUND_INTENSITY } // 10
-                    else if ent >= 3.5 { FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY } // 14
-                    else if ent >= 3.4 { FOREGROUND_RED | FOREGROUND_GREEN } // 6
-                    else if ent >= 3.3 { FOREGROUND_RED | FOREGROUND_INTENSITY } // 12
-                    else { FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE }; // 15
+                let color = if ent >= 3.7 {
+                    FOREGROUND_GREEN | FOREGROUND_INTENSITY
+                }
+                // 10
+                else if ent >= 3.5 {
+                    FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY
+                }
+                // 14
+                else if ent >= 3.4 {
+                    FOREGROUND_RED | FOREGROUND_GREEN
+                }
+                // 6
+                else if ent >= 3.3 {
+                    FOREGROUND_RED | FOREGROUND_INTENSITY
+                }
+                // 12
+                else {
+                    FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE
+                }; // 15
                 let _ = SetConsoleTextAttribute(hconsole, color);
             }
 
@@ -127,12 +160,22 @@ impl KeyDumpster {
                 if !self.false_positives.iter().any(|fp| fp == &key.0) {
                     // Force green if most likely
                     if is_most_likely {
-                        unsafe { let _ = SetConsoleTextAttribute(hconsole, FOREGROUND_GREEN | FOREGROUND_INTENSITY); }
+                        unsafe {
+                            let _ = SetConsoleTextAttribute(
+                                hconsole,
+                                FOREGROUND_GREEN | FOREGROUND_INTENSITY,
+                            );
+                        }
                     }
                     println!("Key: 0x{} | Key Entropy: {}\n", key.0, ent);
                 }
             }
-            unsafe { let _ = SetConsoleTextAttribute(hconsole, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE); }
+            unsafe {
+                let _ = SetConsoleTextAttribute(
+                    hconsole,
+                    FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE,
+                );
+            }
         }
         true
     }
@@ -145,7 +188,9 @@ fn hex_str(bytes: &[u8]) -> String {
 fn calc_entropy(s: &str) -> f64 {
     use std::collections::HashMap;
     let mut freq: HashMap<char, usize> = HashMap::new();
-    for ch in s.chars() { *freq.entry(ch).or_insert(0) += 1; }
+    for ch in s.chars() {
+        *freq.entry(ch).or_insert(0) += 1;
+    }
     let len = s.len() as f64;
     let mut info = 0.0;
     for (_ch, count) in freq {
@@ -159,8 +204,13 @@ fn find_max_elements(v: &[f64]) -> (f64, Vec<usize>) {
     let mut indices = Vec::new();
     let mut current_max = f64::NEG_INFINITY;
     for (i, &val) in v.iter().enumerate() {
-        if val > current_max { current_max = val; indices.clear(); }
-        if val == current_max { indices.push(i); }
+        if val > current_max {
+            current_max = val;
+            indices.clear();
+        }
+        if val == current_max {
+            indices.push(i);
+        }
     }
     (current_max, indices)
 }
@@ -169,28 +219,38 @@ fn parse_signature(pattern: &str) -> Vec<Option<u8>> {
     pattern
         .split_whitespace()
         .map(|tok| {
-            if tok == "?" || tok == "??" || tok.contains('?') { None }
-            else { u8::from_str_radix(tok, 16).ok() }
+            if tok == "?" || tok == "??" || tok.contains('?') {
+                None
+            } else {
+                u8::from_str_radix(tok, 16).ok()
+            }
         })
         .collect()
 }
 
 fn find_signature(buf: &[u8], pattern: &str) -> Vec<usize> {
     let sig = parse_signature(pattern);
-    if sig.is_empty() { return Vec::new(); }
+    if sig.is_empty() {
+        return Vec::new();
+    }
     let sig_len = sig.len();
     let mut out = Vec::new();
-    if buf.len() < sig_len { return out; }
+    if buf.len() < sig_len {
+        return out;
+    }
     for i in 0..=(buf.len() - sig_len) {
         let mut matched = true;
         for (j, maybe) in sig.iter().enumerate() {
             if let Some(b) = maybe {
-                if buf[i + j] != *b { matched = false; break; }
+                if buf[i + j] != *b {
+                    matched = false;
+                    break;
+                }
             }
         }
-        if matched { out.push(i); }
+        if matched {
+            out.push(i);
+        }
     }
     out
 }
-
-

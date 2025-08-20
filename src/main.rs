@@ -1,13 +1,12 @@
-mod other_tools;
 mod key_dumpster;
+mod other_tools;
 
-use crate::other_tools::OtherTools;
 use crate::key_dumpster::KeyDumpster;
+use crate::other_tools::OtherTools;
 
-use std::env;
+use windows::Win32::Foundation::HANDLE;
 use windows::Win32::System::Console::GetStdHandle;
 use windows::Win32::System::Console::STD_OUTPUT_HANDLE;
-use windows::Win32::Foundation::HANDLE;
 
 #[cfg(debug_assertions)]
 fn debug_main(hconsole: HANDLE) {
@@ -49,7 +48,9 @@ fn release_main(hconsole: HANDLE) {
     }
 
     for (i, arg) in args.iter().enumerate() {
-        if i == 0 { continue; }
+        if i == 0 {
+            continue;
+        }
         other_tools.print_file_name(hconsole, arg);
         if other_tools.create_exe_buffer(arg).is_err() {
             return;
@@ -80,5 +81,3 @@ fn main() {
     #[cfg(not(debug_assertions))]
     release_main(hconsole);
 }
-
-

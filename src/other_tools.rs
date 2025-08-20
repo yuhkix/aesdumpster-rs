@@ -4,7 +4,10 @@ use std::io::Read;
 use std::os::windows::ffi::OsStrExt;
 
 use windows::Win32::Foundation::HANDLE;
-use windows::Win32::System::Console::{SetConsoleTextAttribute, FOREGROUND_BLUE, FOREGROUND_GREEN, FOREGROUND_INTENSITY, FOREGROUND_RED};
+use windows::Win32::System::Console::{
+    FOREGROUND_BLUE, FOREGROUND_GREEN, FOREGROUND_INTENSITY, FOREGROUND_RED,
+    SetConsoleTextAttribute,
+};
 
 pub struct RetVal {
     pub buffer: Vec<u8>,
@@ -16,12 +19,17 @@ pub struct OtherTools {
 
 impl OtherTools {
     pub fn new() -> Self {
-        Self { retval: RetVal { buffer: Vec::new() } }
+        Self {
+            retval: RetVal { buffer: Vec::new() },
+        }
     }
 
     pub fn print_intro(&self) {
-        println!("AESDumpster 1.2.5 - By GHFear @ IllusorySoftware");
-        println!("Supports Unreal Engine 4.19 -> 5.3 | (Will soon support UE 4.0 - 4.18 as well)\n");
+        println!("AESDumpster-rs - Rust Implementation by Yuhki");
+        println!("Based on AESDumpster by GHFear @ IllusorySoftware");
+        println!(
+            "Supports Unreal Engine 4.19 -> 5.3 | (Will soon support UE 4.0 - 4.18 as well)\n"
+        );
     }
 
     pub fn print_instructions(&self) {
@@ -65,7 +73,6 @@ impl OtherTools {
     }
 
     pub fn wait_for_enter(&self) {
-        use std::io::Read;
         println!("Press Enter to exit...");
         let _ = std::io::stdin().read_line(&mut String::new());
     }
@@ -73,7 +80,8 @@ impl OtherTools {
 
 #[allow(dead_code)]
 fn to_wide(s: &str) -> Vec<u16> {
-    OsStr::new(s).encode_wide().chain(std::iter::once(0)).collect()
+    OsStr::new(s)
+        .encode_wide()
+        .chain(std::iter::once(0))
+        .collect()
 }
-
-
