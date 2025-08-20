@@ -167,7 +167,7 @@ impl KeyDumpster {
                             );
                         }
                     }
-                    println!("Key: 0x{} | Key Entropy: {}\n", key.0, ent);
+                    println!("Key: 0x{} | Key Entropy: {:.2}\n", key.0, ent);
                 }
             }
             unsafe {
