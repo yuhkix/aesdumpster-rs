@@ -6,7 +6,7 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Windows](https://img.shields.io/badge/platform-windows-lightgrey.svg)](https://www.microsoft.com/windows)
 
-A high-performance Rust utility for scanning Windows executables to locate AES keys through pattern matching and entropy analysis.
+A high-performance Rust utility for scanning Unreal Engine executables to locate AES keys through pattern matching and entropy analysis.
 
 [Features](#-key-features) •
 [Quick Start](#-quick-start) •
@@ -25,6 +25,7 @@ A high-performance Rust utility for scanning Windows executables to locate AES k
 - 📊 Shannon entropy analysis for candidate ranking
 - 🎨 Rich console output with color-coded results
 - 🛡️ Built-in false positive filtering
+- 🪢 Unreal Engine 4.17-5.4 Supported
 
 ## 🔧 Quick Start
 
