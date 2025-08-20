@@ -90,6 +90,27 @@ Key: 0x0123ABCD... | Key Entropy: 3.72
    - Shannon entropy calculation
    - Adaptive threshold system
 
+### Mathematical Foundation
+
+#### Shannon Entropy Calculation
+
+The tool employs Shannon's entropy formula to evaluate the randomness of potential keys. For a sequence of bytes, the entropy H is calculated as:
+
+H = -∑(pᵢ × log₂(pᵢ))
+
+Where:
+- H is the Shannon entropy in bits
+- pᵢ is the probability of byte i occurring in the sequence
+- ∑ represents the sum over all possible byte values (0-255)
+
+For a 32-byte key sequence:
+1. Calculate frequency distribution f(x) for each byte value
+2. Compute probability p(x) = f(x)/32 for each byte
+3. Apply the entropy formula
+4. Normalize result to range [0,4]
+
+High-quality AES keys typically exhibit entropy values ≥3.7, indicating strong randomness.
+
 ## 📁 Project Structure
 
 ```
