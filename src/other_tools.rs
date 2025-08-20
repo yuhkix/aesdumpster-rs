@@ -25,7 +25,7 @@ impl OtherTools {
     }
 
     pub fn print_intro(&self) {
-        println!("AESDumpster-rs - Rust Implementation by Yuhki");
+        println!("AESDumpster-rs - Rust Implementation by yuhkix");
         println!("Based on AESDumpster by GHFear @ IllusorySoftware");
         println!(
             "Supports Unreal Engine 4.19 -> 5.3 | (Will soon support UE 4.0 - 4.18 as well)\n"
