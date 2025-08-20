@@ -4,6 +4,8 @@ mod other_tools;
 use crate::key_dumpster::KeyDumpster;
 use crate::other_tools::OtherTools;
 
+use std::env;
+
 use windows::Win32::Foundation::HANDLE;
 use windows::Win32::System::Console::GetStdHandle;
 use windows::Win32::System::Console::STD_OUTPUT_HANDLE;
