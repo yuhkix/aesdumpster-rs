@@ -1,7 +1,13 @@
-use windows::Win32::Foundation::HANDLE;
+#[cfg(windows)]
 use windows::Win32::System::Console::{
-    FOREGROUND_BLUE, FOREGROUND_GREEN, FOREGROUND_INTENSITY, FOREGROUND_RED, GetStdHandle,
-    STD_OUTPUT_HANDLE, SetConsoleTextAttribute,
+    GetStdHandle, SetConsoleTextAttribute, FOREGROUND_BLUE, FOREGROUND_GREEN, FOREGROUND_INTENSITY,
+    FOREGROUND_RED, STD_OUTPUT_HANDLE,
+};
+
+#[cfg(unix)]
+use crossterm::{
+    execute,
+    style::{Color, ResetColor, SetForegroundColor},
 };
 
 #[derive(Clone)]
@@ -126,58 +132,73 @@ impl KeyDumpster {
             .collect()
     }
 
-    pub fn print_key_information(&self) -> bool {
-        let hconsole: HANDLE =
-            unsafe { GetStdHandle(STD_OUTPUT_HANDLE).expect("GetStdHandle failed") };
-        for (i, key) in self.keys.key_vector.iter().enumerate() {
-            let ent = self.key_entropies.get(i).cloned().unwrap_or(0.0);
-            unsafe {
-                // Match C++ thresholds exactly
+    pub fn print_key_information(&self) {
+        #[cfg(windows)]
+        {
+            let hconsole = unsafe { GetStdHandle(STD_OUTPUT_HANDLE).expect("GetStdHandle failed") };
+            for (i, key) in self.keys.key_vector.iter().enumerate() {
+                let ent = self.key_entropies.get(i).cloned().unwrap_or(0.0);
                 let color = if ent >= 3.7 {
                     FOREGROUND_GREEN | FOREGROUND_INTENSITY
-                }
-                // 10
-                else if ent >= 3.5 {
+                } else if ent >= 3.5 {
                     FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY
-                }
-                // 14
-                else if ent >= 3.4 {
+                } else if ent >= 3.4 {
                     FOREGROUND_RED | FOREGROUND_GREEN
-                }
-                // 6
-                else if ent >= 3.3 {
+                } else if ent >= 3.3 {
                     FOREGROUND_RED | FOREGROUND_INTENSITY
-                }
-                // 12
-                else {
+                } else {
                     FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE
-                }; // 15
-                let _ = SetConsoleTextAttribute(hconsole, color);
-            }
+                };
 
-            let is_most_likely = self.most_likely_indices.iter().any(|idx| *idx == i);
-            if ent >= 3.3 {
-                if !self.false_positives.iter().any(|fp| fp == &key.0) {
-                    // Force green if most likely
-                    if is_most_likely {
-                        unsafe {
-                            let _ = SetConsoleTextAttribute(
-                                hconsole,
-                                FOREGROUND_GREEN | FOREGROUND_INTENSITY,
-                            );
-                        }
+                let is_most_likely = self.most_likely_indices.contains(&i);
+                if ent >= 3.3 && !self.false_positives.iter().any(|fp| fp == &key.0) {
+                    let final_color = if is_most_likely {
+                        FOREGROUND_GREEN | FOREGROUND_INTENSITY
+                    } else {
+                        color
+                    };
+                    unsafe {
+                        SetConsoleTextAttribute(hconsole, final_color).unwrap();
                     }
                     println!("Key: 0x{} | Key Entropy: {:.2}\n", key.0, ent);
                 }
             }
             unsafe {
-                let _ = SetConsoleTextAttribute(
+                SetConsoleTextAttribute(
                     hconsole,
                     FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE,
-                );
+                )
+                .unwrap();
             }
         }
-        true
+        #[cfg(unix)]
+        {
+            let mut stdout = std::io::stdout();
+            for (i, key) in self.keys.key_vector.iter().enumerate() {
+                let ent = self.key_entropies.get(i).cloned().unwrap_or(0.0);
+
+                let color = if ent >= 3.7 {
+                    Color::Green
+                } else if ent >= 3.5 {
+                    Color::Yellow
+                } else if ent >= 3.4 {
+                    Color::DarkYellow
+                } else if ent >= 3.3 {
+                    Color::Red
+                } else {
+                    Color::White
+                };
+
+                let is_most_likely = self.most_likely_indices.contains(&i);
+                if ent >= 3.3 && !self.false_positives.iter().any(|fp| fp == &key.0) {
+                    let final_color = if is_most_likely { Color::Green } else { color };
+                    execute!(stdout, SetForegroundColor(final_color)).unwrap();
+                    println!("Key: 0x{} | Key Entropy: {:.2}\n", key.0, ent);
+                }
+            }
+            // Reset color at the end
+            execute!(stdout, ResetColor).unwrap();
+        }
     }
 }
 

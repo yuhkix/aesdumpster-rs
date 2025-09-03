@@ -1,0 +1,12 @@
+[package]
+name = "pe-utils"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+goblin = "0.10.1"
+thiserror = "2.0.16"
+
+[lib]
+name = "pe_utils"
+path = "src/lib.rs"
