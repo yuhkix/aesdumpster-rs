@@ -28,6 +28,7 @@ impl OtherTools {
         }
     }
 
+    #[allow(dead_code)]
     pub fn print_intro(&self) {
         println!("AESDumpster-rs - Rust Implementation by yuhkix");
         println!("Based on AESDumpster by GHFear @ IllusorySoftware");
@@ -36,6 +37,7 @@ impl OtherTools {
         );
     }
 
+    #[allow(dead_code)]
     pub fn print_instructions(&self) {
         println!("Usage:");
         println!("- Pass one or more Unreal Engine executables as arguments.");

@@ -3,6 +3,7 @@ mod other_tools;
 
 use crate::key_dumpster::KeyDumpster;
 use crate::other_tools::OtherTools;
+#[cfg(not(debug_assertions))]
 use std::env;
 
 #[cfg(debug_assertions)]
