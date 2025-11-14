@@ -33,16 +33,12 @@ fn main() {
 
             if let Some(key) = key_dumpster.get_most_likely_key() {
                 match other_tools.write_key_to_file(&key, "aes.txt") {
-                    Ok(_) => println!(
-                        "[+] Successfully wrote the most likely key to {}!",
-                        "aes.txt"
-                    ),
-                    Err(e) => eprintln!("[-] Error writing key to {}: {}", "aes.txt", e),
+                    Ok(_) => println!("[+] Successfully wrote the most likely key to `aes.txt`!"),
+                    Err(e) => eprintln!("[-] Error writing key to `aes.txt`: {}", e),
                 }
             } else {
                 println!(
-                    "[!] Keys were found, but none met the minimum criteria for writing to {}.",
-                    "aes.txt"
+                    "[!] Keys were found, but none met the minimum criteria for writing to `aes.txt`."
                 );
             }
         }

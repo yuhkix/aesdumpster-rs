@@ -1,7 +1,7 @@
 #[cfg(windows)]
 use windows::Win32::System::Console::{
-    FOREGROUND_BLUE, FOREGROUND_GREEN, FOREGROUND_INTENSITY, FOREGROUND_RED, GetStdHandle,
-    STD_OUTPUT_HANDLE, SetConsoleTextAttribute,
+    GetStdHandle, SetConsoleTextAttribute, FOREGROUND_BLUE, FOREGROUND_GREEN, FOREGROUND_INTENSITY,
+    FOREGROUND_RED, STD_OUTPUT_HANDLE,
 };
 
 #[cfg(unix)]
@@ -112,25 +112,19 @@ impl KeyDumpster {
         let mut max_entropy_for_dump = f64::NEG_INFINITY;
 
         for (i, _key) in self.keys.key_vector.iter().enumerate() {
-            if let Some(ent) = self.key_entropies.get(i) {
-                if *ent >= 3.3 {
-                    if *ent > max_entropy_for_dump {
-                        max_entropy_for_dump = *ent;
-                        best_key_index = Some(i);
-                    }
-                }
+            if let Some(&ent) = self.key_entropies.get(i)
+                && ent >= 3.3
+                && ent > max_entropy_for_dump
+            {
+                max_entropy_for_dump = ent;
+                best_key_index = Some(i);
             }
         }
 
         best_key_index.and_then(|i| self.keys.key_vector.get(i).map(|k| k.0.clone()))
     }
 
-    fn concatenate_aes_type(
-        &self,
-        buf: &[u8],
-        base: usize,
-        offsets: &Vec<usize>,
-    ) -> Option<String> {
+    fn concatenate_aes_type(&self, buf: &[u8], base: usize, offsets: &[usize]) -> Option<String> {
         let mut out = String::new();
         for off in offsets.iter() {
             let idx = base.checked_add(*off)?;
@@ -156,11 +150,15 @@ impl KeyDumpster {
 
         for (i, key) in self.keys.key_vector.iter().enumerate() {
             let ent = self.key_entropies.get(i).cloned().unwrap_or(0.0);
-            if ent >= 3.3 && !self.false_positives.iter().any(|fp| fp == &key.0) {
-                if ent > max_entropy {
-                    max_entropy = ent;
-                    best_key_index = Some(i);
-                }
+
+            // Collapse entire nested-if logic into one guard
+            if ent < 3.3 || self.false_positives.iter().any(|fp| fp == &key.0) {
+                continue;
+            }
+
+            if ent > max_entropy {
+                max_entropy = ent;
+                best_key_index = Some(i);
             }
         }
 
@@ -169,20 +167,19 @@ impl KeyDumpster {
 
             #[cfg(windows)]
             {
-                let hconsole =
-                    unsafe { GetStdHandle(STD_OUTPUT_HANDLE).expect("GetStdHandle failed") };
+                let hconsole = unsafe { GetStdHandle(STD_OUTPUT_HANDLE).unwrap() };
                 unsafe {
-                    let _ =
-                        SetConsoleTextAttribute(hconsole, FOREGROUND_GREEN | FOREGROUND_INTENSITY);
+                    SetConsoleTextAttribute(hconsole, FOREGROUND_GREEN | FOREGROUND_INTENSITY);
                 }
                 println!("Key: 0x{}\n", key.0);
                 unsafe {
-                    let _ = SetConsoleTextAttribute(
+                    SetConsoleTextAttribute(
                         hconsole,
                         FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE,
                     );
                 }
             }
+
             #[cfg(unix)]
             {
                 let mut stdout = std::io::stdout();
@@ -243,27 +240,23 @@ fn parse_signature(pattern: &str) -> Vec<Option<u8>> {
 
 fn find_signature(buf: &[u8], pattern: &str) -> Vec<usize> {
     let sig = parse_signature(pattern);
-    if sig.is_empty() {
+    let sig_len = sig.len();
+
+    if sig_len == 0 || buf.len() < sig_len {
         return Vec::new();
     }
-    let sig_len = sig.len();
+
     let mut out = Vec::new();
-    if buf.len() < sig_len {
-        return out;
-    }
-    for i in 0..=(buf.len() - sig_len) {
-        let mut matched = true;
-        for (j, maybe) in sig.iter().enumerate() {
-            if let Some(b) = maybe {
-                if buf[i + j] != *b {
-                    matched = false;
-                    break;
-                }
-            }
-        }
-        if matched {
+
+    for i in 0..=buf.len() - sig_len {
+        if sig
+            .iter()
+            .enumerate()
+            .all(|(j, maybe)| maybe.is_none() || *maybe == Some(buf[i + j]))
+        {
             out.push(i);
         }
     }
+
     out
 }
