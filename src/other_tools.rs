@@ -1,16 +1,17 @@
 use std::fs::File;
+use std::io::Error as IoError;
 use std::io::{self, Read, Write};
 
 #[cfg(windows)]
 use windows::Win32::System::Console::{
-    SetConsoleTextAttribute, GetStdHandle, STD_OUTPUT_HANDLE,
-    FOREGROUND_RED, FOREGROUND_GREEN, FOREGROUND_BLUE, FOREGROUND_INTENSITY,
+    FOREGROUND_BLUE, FOREGROUND_GREEN, FOREGROUND_INTENSITY, FOREGROUND_RED, GetStdHandle,
+    STD_OUTPUT_HANDLE, SetConsoleTextAttribute,
 };
 
 #[cfg(unix)]
 use crossterm::{
     execute,
-    style::{Color, SetForegroundColor, ResetColor},
+    style::{Color, ResetColor, SetForegroundColor},
 };
 
 pub struct RetVal {
@@ -30,11 +31,9 @@ impl OtherTools {
 
     #[allow(dead_code)]
     pub fn print_intro(&self) {
-        println!("AESDumpster-rs - Rust Implementation by yuhkix");
+        println!("AESDumpster-rs");
         println!("Based on AESDumpster by GHFear @ IllusorySoftware");
-        println!(
-            "Supports Unreal Engine 4.19 -> 5.3 | (Will soon support UE 4.0 - 4.18 as well)\n"
-        );
+        println!("Supports Unreal Engine 4.19 -> 5.3\n");
     }
 
     #[allow(dead_code)]
@@ -97,5 +96,11 @@ impl OtherTools {
         print!("Press Enter to exit...");
         io::stdout().flush().unwrap();
         let _ = io::stdin().read_line(&mut String::new());
+    }
+
+    pub fn write_key_to_file(&self, key: &str, filepath: &str) -> Result<(), IoError> {
+        let mut file = File::create(filepath)?;
+        writeln!(file, "0x{}", key)?;
+        Ok(())
     }
 }

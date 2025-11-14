@@ -5,6 +5,7 @@
 [![Rust](https://img.shields.io/badge/rust-stable-brightgreen.svg)](https://www.rust-lang.org)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Windows](https://img.shields.io/badge/platform-windows-lightgrey.svg)](https://www.microsoft.com/windows)
+[![Linux](https://img.shields.io/badge/platform-linux-lightgrey.svg)](https://www.linux.org)
 
 A high-performance Rust utility for scanning Unreal Engine executables to locate AES keys through pattern matching and entropy analysis.
 
@@ -55,24 +56,6 @@ A high-performance Rust utility for scanning Unreal Engine executables to locate
 
 # Multiple file analysis
 .\target\release\aesdumpster.exe C:\path\to\First.exe C:\path\to\Second.exe
-```
-
-## 📘 Usage and Output
-
-### Output Format
-
-Each analyzed file produces color-coded results based on entropy scoring:
-
-| Entropy Range | Color        | Likelihood |
-|--------------|--------------|------------|
-| ≥3.7         | Bright Green | Highest    |
-| 3.5-3.7      | Bright Yellow| High       |
-| 3.4-3.5      | Dark Yellow  | Medium     |
-| 3.3-3.4      | Bright Red   | Low        |
-
-Example output:
-```
-Key: 0x0123ABCD... | Key Entropy: 3.72
 ```
 
 ## 🔍 How It Works

@@ -3,37 +3,9 @@ mod other_tools;
 
 use crate::key_dumpster::KeyDumpster;
 use crate::other_tools::OtherTools;
-#[cfg(not(debug_assertions))]
 use std::env;
 
-#[cfg(debug_assertions)]
-fn debug_main() {
-    let exe_path = r"path/to/your/test/executable"; // <-- IMPORTANT: Update this path for your Linux/Windows system
-
-    let mut other_tools = OtherTools::new();
-    other_tools.print_file_name(exe_path);
-
-    if other_tools.create_exe_buffer(exe_path).is_err() {
-        return;
-    }
-    if other_tools.retval.buffer.is_empty() {
-        eprintln!("retval.buffer is empty.");
-        return;
-    }
-
-    let mut key_dumpster = KeyDumpster::new();
-    if !key_dumpster.find_aes_keys(&other_tools.retval.buffer) {
-        println!("There were no keys to be found or a problem occurred.");
-    } else {
-        key_dumpster.print_key_information();
-    }
-
-    other_tools.print_outro();
-    other_tools.wait_for_enter();
-}
-
-#[cfg(not(debug_assertions))]
-fn release_main() {
+fn main() {
     let mut other_tools = OtherTools::new();
     other_tools.print_intro();
 
@@ -58,17 +30,24 @@ fn release_main() {
             println!("No keys found in: {}", arg);
         } else {
             key_dumpster.print_key_information();
+
+            if let Some(key) = key_dumpster.get_most_likely_key() {
+                match other_tools.write_key_to_file(&key, "aes.txt") {
+                    Ok(_) => println!(
+                        "[+] Successfully wrote the most likely key to {}!",
+                        "aes.txt"
+                    ),
+                    Err(e) => eprintln!("[-] Error writing key to {}: {}", "aes.txt", e),
+                }
+            } else {
+                println!(
+                    "[!] Keys were found, but none met the minimum criteria for writing to {}.",
+                    "aes.txt"
+                );
+            }
         }
     }
 
     other_tools.print_outro();
     other_tools.wait_for_enter();
-}
-
-fn main() {
-    #[cfg(debug_assertions)]
-    debug_main();
-
-    #[cfg(not(debug_assertions))]
-    release_main();
 }

@@ -1,7 +1,7 @@
 #[cfg(windows)]
 use windows::Win32::System::Console::{
-    GetStdHandle, SetConsoleTextAttribute, FOREGROUND_BLUE, FOREGROUND_GREEN, FOREGROUND_INTENSITY,
-    FOREGROUND_RED, STD_OUTPUT_HANDLE,
+    FOREGROUND_BLUE, FOREGROUND_GREEN, FOREGROUND_INTENSITY, FOREGROUND_RED, GetStdHandle,
+    STD_OUTPUT_HANDLE, SetConsoleTextAttribute,
 };
 
 #[cfg(unix)]
@@ -107,6 +107,24 @@ impl KeyDumpster {
         found_any
     }
 
+    pub fn get_most_likely_key(&self) -> Option<String> {
+        let mut best_key_index: Option<usize> = None;
+        let mut max_entropy_for_dump = f64::NEG_INFINITY;
+
+        for (i, _key) in self.keys.key_vector.iter().enumerate() {
+            if let Some(ent) = self.key_entropies.get(i) {
+                if *ent >= 3.3 {
+                    if *ent > max_entropy_for_dump {
+                        max_entropy_for_dump = *ent;
+                        best_key_index = Some(i);
+                    }
+                }
+            }
+        }
+
+        best_key_index.and_then(|i| self.keys.key_vector.get(i).map(|k| k.0.clone()))
+    }
+
     fn concatenate_aes_type(
         &self,
         buf: &[u8],
@@ -133,71 +151,45 @@ impl KeyDumpster {
     }
 
     pub fn print_key_information(&self) {
-        #[cfg(windows)]
-        {
-            let hconsole = unsafe { GetStdHandle(STD_OUTPUT_HANDLE).expect("GetStdHandle failed") };
-            for (i, key) in self.keys.key_vector.iter().enumerate() {
-                let ent = self.key_entropies.get(i).cloned().unwrap_or(0.0);
-                let color = if ent >= 3.7 {
-                    FOREGROUND_GREEN | FOREGROUND_INTENSITY
-                } else if ent >= 3.5 {
-                    FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY
-                } else if ent >= 3.4 {
-                    FOREGROUND_RED | FOREGROUND_GREEN
-                } else if ent >= 3.3 {
-                    FOREGROUND_RED | FOREGROUND_INTENSITY
-                } else {
-                    FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE
-                };
+        let mut best_key_index: Option<usize> = None;
+        let mut max_entropy = f64::NEG_INFINITY;
 
-                let is_most_likely = self.most_likely_indices.contains(&i);
-                if ent >= 3.3 && !self.false_positives.iter().any(|fp| fp == &key.0) {
-                    let final_color = if is_most_likely {
-                        FOREGROUND_GREEN | FOREGROUND_INTENSITY
-                    } else {
-                        color
-                    };
-                    unsafe {
-                        SetConsoleTextAttribute(hconsole, final_color).unwrap();
-                    }
-                    println!("Key: 0x{} | Key Entropy: {:.2}\n", key.0, ent);
+        for (i, key) in self.keys.key_vector.iter().enumerate() {
+            let ent = self.key_entropies.get(i).cloned().unwrap_or(0.0);
+            if ent >= 3.3 && !self.false_positives.iter().any(|fp| fp == &key.0) {
+                if ent > max_entropy {
+                    max_entropy = ent;
+                    best_key_index = Some(i);
                 }
-            }
-            unsafe {
-                SetConsoleTextAttribute(
-                    hconsole,
-                    FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE,
-                )
-                .unwrap();
             }
         }
-        #[cfg(unix)]
-        {
-            let mut stdout = std::io::stdout();
-            for (i, key) in self.keys.key_vector.iter().enumerate() {
-                let ent = self.key_entropies.get(i).cloned().unwrap_or(0.0);
 
-                let color = if ent >= 3.7 {
-                    Color::Green
-                } else if ent >= 3.5 {
-                    Color::Yellow
-                } else if ent >= 3.4 {
-                    Color::DarkYellow
-                } else if ent >= 3.3 {
-                    Color::Red
-                } else {
-                    Color::White
-                };
+        if let Some(best_index) = best_key_index {
+            let key = &self.keys.key_vector[best_index];
 
-                let is_most_likely = self.most_likely_indices.contains(&i);
-                if ent >= 3.3 && !self.false_positives.iter().any(|fp| fp == &key.0) {
-                    let final_color = if is_most_likely { Color::Green } else { color };
-                    execute!(stdout, SetForegroundColor(final_color)).unwrap();
-                    println!("Key: 0x{} | Key Entropy: {:.2}\n", key.0, ent);
+            #[cfg(windows)]
+            {
+                let hconsole =
+                    unsafe { GetStdHandle(STD_OUTPUT_HANDLE).expect("GetStdHandle failed") };
+                unsafe {
+                    let _ =
+                        SetConsoleTextAttribute(hconsole, FOREGROUND_GREEN | FOREGROUND_INTENSITY);
+                }
+                println!("Key: 0x{}\n", key.0);
+                unsafe {
+                    let _ = SetConsoleTextAttribute(
+                        hconsole,
+                        FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE,
+                    );
                 }
             }
-            // Reset color at the end
-            execute!(stdout, ResetColor).unwrap();
+            #[cfg(unix)]
+            {
+                let mut stdout = std::io::stdout();
+                execute!(stdout, SetForegroundColor(Color::Green)).unwrap();
+                println!("Key: 0x{}\n", key.0);
+                execute!(stdout, ResetColor).unwrap();
+            }
         }
     }
 }
