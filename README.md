@@ -61,13 +61,11 @@ A high-performance Rust utility for scanning Unreal Engine executables to locate
 
 - **Linux**
 ```powershell
-```
 # Single file analysis
 ./target/release/aesdumpster /path/to/Game-Win64-Shipping.exe
 
 # Multiple file analysis
 ./target/release/aesdumpster /path/to/First.exe /path/to/Second.exe
-```
 ```
 
 ## 🔍 How It Works
@@ -146,3 +144,4 @@ This tool is intended for legitimate research, debugging, and forensics purposes
 <div align="center">
 Made with ❤️ using Rust
 </div>
+
